@@ -1,2 +1,3 @@
 # MPGinfluence
-Rank the importance variables have on car mileage per gallon
+Public
+Explore the impact transmission type has on gas mileage using linear and multivariate regression models.
