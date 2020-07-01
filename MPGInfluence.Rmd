@@ -1,0 +1,107 @@
+---
+title: Exploring the relationship between a set of variables and miles per gallon
+  (MPG)
+author: "Clemens"
+date: "7/1/2020"
+output: pdf_document
+---
+
+# Executive Summary
+
+
+This analysis used the R dataset mtcars to explore the relationship between a set of variables and miles per gallon (MPG).
+
+Through the data analysis presented below we found that in the mtcars dataset automatic transmissions have **1.56 mpg lower** gas mileage than manual transmissions.  Further analysis and the backing evidence on the multivariate model selected is included below.
+
+
+# Data Analysis
+
+## Exploratory Data Analysis
+
+First we'll load the libraries used for this analysis.
+
+```{r error=FALSE, warning=FALSE, message=FALSE} 
+invisible({capture.output({
+library(dplyr) # above items are silencing the output so don't see all comments about loading dplyr
+})})
+```
+
+
+Next we'll load the dataset and take a look at some basic characteristics of mtcars.
+
+```{r, echo=TRUE}
+dim(mtcars)
+head(mtcars)
+```
+
+Trying to get a preliminary idea of the relationships between transmission type and mpg:
+
+```{r, echo=TRUE}
+mtcars$am <- factor(mtcars$am)
+mtcarsM <- filter(mtcars, am == 1)
+mtcarsA <- filter(mtcars, am == 0)
+hist(mtcarsM$mpg, col=rgb(0,0,1,1/4), xlim=c(0,50), main = "MPG Histogram", ylab = "MPG", breaks = 8)  # first histogram
+hist(mtcarsA$mpg, col=rgb(1,0,0,1/4), xlim=c(0,50), add = TRUE, breaks = 8)  # second
+legend('topright',c('Manual','Automatic'),
+       fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4)), bty = 'n',
+       border = NA)
+```
+
+We can do a quick t.test to check whether there is a significant difference between the effect of automatic and manual transmissions on mpg, which looks likely from the histogram above.
+
+```{r, echo=TRUE}
+t.test(mtcarsM$mpg,mtcarsA$mpg)
+```
+
+The confidence interval does not overlap zero and we have a small p-value of .001374, so we can say that there is a significant difference between the two (looking for .05 or lower).
+
+##  Model Selection and Diagnostics
+
+We'll start with fitting a linear regression model to the data
+
+```{r, echo=TRUE}
+l_mdl <- lm(mpg ~ am, mtcars)
+summary(l_mdl)
+```
+
+Because automatic transmissions are denoted by "0" in the mtcars dataset, we see it's coefficient listed as the intercept.  We also know that this is the mean mpg of the automatic transmission dataset, **17.147 mpg**.  We also see that, on average, manual transmissions have a higher mpg by **7.245 mpg**.  At first look these figures seem to have a high signifigance and are more than two standard errors away from 0.  However, the R^2 value is 0.36 meaning the model only explains 36% of the variance.
+
+We'll run a multivariate model to see the influence of transmission type when also factoring in other variables, such as car weight.
+
+```{r, echo=TRUE}
+m_mdl <- lm(formula = mpg ~ am + cyl + disp + hp + wt, data = mtcars)
+summary(m_mdl)
+```
+
+We can see with R^2 = .83 that this model explains 83% of the variance.  We can also do a quick check comparison with anova.
+
+```{r, echo=TRUE}
+anova(l_mdl, m_mdl)
+```
+
+With a p-value of **4.507e-08** we confirm the multivariate model is significantly better than the single linear model.
+
+Looking back at the coefficients of the multivariate model, it tells us that manual transmissions ("am1") have **1.56 mpg higher** gas mileage than automatic transmissions.  Furhter diagnostic plots, including residuals, are included in the appendix below.
+
+
+# Conclusions  
+
+In conclusion, the analysis on mtcars shows that automatic transmissions have better gas mileage than manual transmissions. Strictly looking at transmission types, automatic transmissions in mtcars, on average, have a lower gas mileage by 7.245 mpg.  Fine tuning our model selection and accounting for other variables, such as car weight, we foud a significant result (our model explaining 83% of the variance in mpg) that **automatic transmissions have 1.56 lower mpg gas mileage than manual transmissions**.
+
+
+# Appendix
+
+Pairs Plot to look variable influence on mpg
+
+```{r, fig.width=6, fig.height=4, echo=TRUE}
+pairs(mpg ~ ., mtcars)
+```
+
+
+Multivariate regression diagnostic plots
+
+```{r, fig.width=6, fig.height=4, echo=TRUE}
+par(mfrow = c(2,2))
+plot(m_mdl)
+```
+
